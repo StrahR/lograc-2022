@@ -5,3 +5,6 @@
 *.agdai
 MAlonzo/**
 _build/
+
+# VSCode specific
+.vscode/
