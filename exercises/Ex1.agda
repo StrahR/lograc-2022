@@ -63,9 +63,9 @@ data Bool : Set where
 -}
 
 _⊕_ : Bool → Bool → Bool
-true ⊕ true = false
-true ⊕ false = true
-false ⊕ true = true
+true  ⊕ true  = false
+true  ⊕ false = true
+false ⊕ true  = true
 false ⊕ false = false
 
 {-
@@ -116,7 +116,7 @@ decr (suc n) = n
 
 triple : ℕ → ℕ
 triple zero = zero
-triple (suc n) = incr (incr (incr (triple n)))
+triple (suc n) = suc (suc (suc (triple n)))
 
 
 ----------------
@@ -148,7 +148,7 @@ infixl 7  _*_
 
 _^_ : ℕ → ℕ → ℕ
 m ^ zero = 1
-m ^ suc n = m * (m + n)
+m ^ suc n = m * m ^ n
 
 infixl 8  _^_
 
@@ -230,7 +230,8 @@ data Even : ℕ → Set where
 
 data Even₂ : Bin → Set where
   {- EXERCISE: add the constructors for this inductive predicate here -}
-  b-even-z : Even₂ ⟨⟩
+  b-even-e : Even₂ ⟨⟩
+  b-even-z : Even₂ (⟨⟩ O)
   b-even-ss : {b : Bin} → Even₂ b → Even₂ (b-incr (b-incr b))
 
 
@@ -244,8 +245,10 @@ data Even₂ : Bin → Set where
 -}
 
 to-even : {n : ℕ} → Even n → Even₂ (to n)
-to-even even-z = b-even-z
-to-even (even-ss {n} p) = b-even-ss (to-even p)
+to-even even-z = b-even-e
+to-even (even-ss p) = b-even-ss (to-even p)
+-- to-even even-z = b-even-e
+-- to-even (even-ss p) = b-even-ss (to-even p)
 
 
 ----------------
@@ -298,6 +301,7 @@ from-ne : (b : Bin) → NonEmptyBin b → ℕ
 from-ne (b O) p = 2 * (from b)
 from-ne (b I) p = 1 + 2 * (from b)
 
+
 -----------------
 -- Exercise 10 --
 -----------------
@@ -329,7 +333,7 @@ infixr 5 _∷_
 
 map : {A B : Set} → (A → B) → List A → List B
 map f [] = []
-map f (x ∷ xs) = (f x) ∷ (map f xs)
+map f (x ∷ xs) = f x ∷ map f xs
 
 
 -----------------
@@ -389,7 +393,6 @@ infix 4 _≤_
 
 data _≤ᴸ_ {A : Set} : List A → List A → Set where
   {- EXERCISE: add the constructors for this inductive relation here -}
-  e≤ᴸl : {xs : List A} → [] ≤ᴸ xs
   l≤ᴸl : {xs ys : List A} → length xs ≤ length ys → xs ≤ᴸ ys
 
 infix 4 _≤ᴸ_
@@ -405,12 +408,11 @@ infix 4 _≤ᴸ_
 -}
 
 length-≤ᴸ-≦ : {A : Set} {xs ys : List A} → xs ≤ᴸ ys → length xs ≤ length ys
-length-≤ᴸ-≦ e≤ᴸl = z≤n
 length-≤ᴸ-≦ (l≤ᴸl x) = x
 
 length-≤-≦ᴸ : {A : Set} (xs ys : List A) → length xs ≤ length ys → xs ≤ᴸ ys
-length-≤-≦ᴸ [] ys z≤n = e≤ᴸl
-length-≤-≦ᴸ (x ∷ xs) ys p = l≤ᴸl p
+length-≤-≦ᴸ xs ys p = l≤ᴸl p
+
 
 -----------------
 -- Exercise 14 --
@@ -426,3 +428,33 @@ length-≤-≦ᴸ (x ∷ xs) ys p = l≤ᴸl p
    - "less than or equal" order
    - show that `from` takes even numbers to even numbers
 -}
+
+infix 4 _≡ᴮ_
+
+data _≡ᴮ_ : Bin -> Bin -> Set where
+  e≡ᴮe : ⟨⟩ ≡ᴮ ⟨⟩
+--   e≡ᴮO : ⟨⟩ ≡ᴮ ⟨⟩ O
+  bO≡ᴮbO : {m n : Bin} → m ≡ᴮ n → m O ≡ᴮ n O
+  bI≡ᴮbI : {m n : Bin} → m ≡ᴮ n → m I ≡ᴮ n I
+
+infix 4 _≤ᴮ_
+
+data _≤ᴮ_ : Bin -> Bin -> Set where
+  e≤ᴮb : {b : Bin} -> ⟨⟩ ≤ᴮ b
+  bO≤ᴮbO : {b₁ b₂ : Bin} → b₁ ≤ᴮ b₂ → b₁ O ≤ᴮ b₂ O
+  bI≤ᴮbI : {b₁ b₂ : Bin} → b₁ ≤ᴮ b₂ → b₁ I ≤ᴮ b₂ I
+  bO≤ᴮbI : {b₁ b₂ : Bin} → b₁ ≡ᴮ b₂ → b₁ O ≤ᴮ b₂ I
+
+≡ᴺ-refl : {n : ℕ} → n ≡ᴺ n
+≡ᴺ-refl {zero} = z≡ᴺz
+≡ᴺ-refl {suc n} = s≡ᴺs ≡ᴺ-refl
+
+bincr-suc-lemma : {b : Bin} → from (b-incr b) ≡ᴺ suc (from b)
+bincr-suc-lemma {⟨⟩} = s≡ᴺs z≡ᴺz
+bincr-suc-lemma {b O} = s≡ᴺs {!   !}
+bincr-suc-lemma {b I} = {!   !}
+
+from-even : {b : Bin} → Even₂ b → Even (from b)
+from-even b-even-e = even-z
+from-even b-even-z = even-z
+from-even (b-even-ss {b} p) = {! even-ss (from-even p) !} 
