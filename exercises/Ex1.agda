@@ -63,7 +63,10 @@ data Bool : Set where
 -}
 
 _⊕_ : Bool → Bool → Bool
-b ⊕ b' = {!!}
+true ⊕ true = false
+true ⊕ false = true
+false ⊕ true = true
+false ⊕ false = false
 
 {-
    You can test whether your definition computes correctly by using
@@ -95,7 +98,7 @@ data ℕ : Set where
 -}
 
 incr : ℕ → ℕ
-incr n = {!!}
+incr n = suc n
 
 {-
    Define a function that decrements a number by one. Give the definition
@@ -103,7 +106,8 @@ incr n = {!!}
 -}
 
 decr : ℕ → ℕ
-decr n = {!!}
+decr zero = zero
+decr (suc n) = n
 
 {-
    Define a function that triples the value of a given number.
@@ -111,7 +115,8 @@ decr n = {!!}
 -}
 
 triple : ℕ → ℕ
-triple n = {!!}
+triple zero = zero
+triple (suc n) = incr (incr (incr (triple n)))
 
 
 ----------------
@@ -142,7 +147,8 @@ infixl 7  _*_
 -}
 
 _^_ : ℕ → ℕ → ℕ
-m ^ n = {!!}
+m ^ zero = 1
+m ^ suc n = m * (m + n)
 
 infixl 8  _^_
 
@@ -178,7 +184,9 @@ infixl 20 _I
 -}
 
 b-incr : Bin → Bin
-b-incr b = {!!}
+b-incr ⟨⟩ = ⟨⟩ I
+b-incr (b O) = b I
+b-incr (b I) = (b-incr b) O
 
 
 ----------------
@@ -195,10 +203,13 @@ b-incr b = {!!}
 -}
 
 to : ℕ → Bin
-to n = {!!}
+to zero = ⟨⟩
+to (suc n) = b-incr (to n)
 
 from : Bin → ℕ
-from b = {!!}
+from ⟨⟩ = zero
+from (b O) = 2 * (from b)
+from (b I) = 1 + 2 * (from b)
 
 
 ----------------
@@ -219,6 +230,8 @@ data Even : ℕ → Set where
 
 data Even₂ : Bin → Set where
   {- EXERCISE: add the constructors for this inductive predicate here -}
+  b-even-z : Even₂ ⟨⟩
+  b-even-ss : {b : Bin} → Even₂ b → Even₂ (b-incr (b-incr b))
 
 
 ----------------
@@ -231,7 +244,8 @@ data Even₂ : Bin → Set where
 -}
 
 to-even : {n : ℕ} → Even n → Even₂ (to n)
-to-even p = {!!}
+to-even even-z = b-even-z
+to-even (even-ss {n} p) = b-even-ss (to-even p)
 
 
 ----------------
@@ -253,7 +267,8 @@ to-even p = {!!}
 
 data NonEmptyBin : Bin → Set where
   {- EXERCISE: add the constructors for this inductive predicate here -}
-
+  nonemptybin-o : {b : Bin} → NonEmptyBin (b O)
+  nonemptybin-i : {b : Bin} → NonEmptyBin (b I)
 {-
    To verify that `NonEmptyBin ⟨⟩` is indeed not inhabited as intended,
    show that you can define a function from it to Agda's empty type
@@ -263,7 +278,7 @@ data NonEmptyBin : Bin → Set where
 data ⊥ : Set where
 
 ⟨⟩-empty : NonEmptyBin ⟨⟩ → ⊥
-⟨⟩-empty p = {!!}
+⟨⟩-empty ()
 
 
 ----------------
@@ -280,8 +295,8 @@ data ⊥ : Set where
 -}
 
 from-ne : (b : Bin) → NonEmptyBin b → ℕ
-from-ne b p = {!!}
-
+from-ne (b O) p = 2 * (from b)
+from-ne (b I) p = 1 + 2 * (from b)
 
 -----------------
 -- Exercise 10 --
@@ -313,7 +328,8 @@ infixr 5 _∷_
 -}
 
 map : {A B : Set} → (A → B) → List A → List B
-map f xs = {!!}
+map f [] = []
+map f (x ∷ xs) = (f x) ∷ (map f xs)
 
 
 -----------------
@@ -325,7 +341,8 @@ map f xs = {!!}
 -}
 
 length : {A : Set} → List A → ℕ
-length xs = {!!}
+length [] = 0
+length (x ∷ xs) = suc (length xs)
 
 -----------------
 -- Exercise 12 --
@@ -346,7 +363,8 @@ data _≡ᴺ_ : ℕ → ℕ → Set where
 -}
 
 map-≡ᴺ : {A B : Set} {f : A → B} → (xs : List A) → length xs ≡ᴺ length (map f xs)
-map-≡ᴺ xs = {!!}
+map-≡ᴺ [] = z≡ᴺz
+map-≡ᴺ (x ∷ xs) = s≡ᴺs (map-≡ᴺ xs)
 
 
 -----------------
@@ -371,6 +389,8 @@ infix 4 _≤_
 
 data _≤ᴸ_ {A : Set} : List A → List A → Set where
   {- EXERCISE: add the constructors for this inductive relation here -}
+  e≤ᴸl : {xs : List A} → [] ≤ᴸ xs
+  l≤ᴸl : {xs ys : List A} → length xs ≤ length ys → xs ≤ᴸ ys
 
 infix 4 _≤ᴸ_
 
@@ -385,11 +405,12 @@ infix 4 _≤ᴸ_
 -}
 
 length-≤ᴸ-≦ : {A : Set} {xs ys : List A} → xs ≤ᴸ ys → length xs ≤ length ys
-length-≤ᴸ-≦ p = {!!}
+length-≤ᴸ-≦ e≤ᴸl = z≤n
+length-≤ᴸ-≦ (l≤ᴸl x) = x
 
 length-≤-≦ᴸ : {A : Set} (xs ys : List A) → length xs ≤ length ys → xs ≤ᴸ ys
-length-≤-≦ᴸ xs ys p = {!!}
-
+length-≤-≦ᴸ [] ys z≤n = e≤ᴸl
+length-≤-≦ᴸ (x ∷ xs) ys p = l≤ᴸl p
 
 -----------------
 -- Exercise 14 --
