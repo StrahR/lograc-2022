@@ -206,10 +206,16 @@ to : ℕ → Bin
 to zero = ⟨⟩
 to (suc n) = b-incr (to n)
 
+
+double : ℕ → ℕ
+double zero = zero
+double (suc n) = suc (suc (double n))
+
+
 from : Bin → ℕ
 from ⟨⟩ = zero
-from (b O) = 2 * (from b)
-from (b I) = 1 + 2 * (from b)
+from (b O) = double (from b)
+from (b I) = suc (double (from b))
 
 
 ----------------
@@ -299,7 +305,7 @@ data ⊥ : Set where
 
 from-ne : (b : Bin) → NonEmptyBin b → ℕ
 from-ne (b O) p = 2 * (from b)
-from-ne (b I) p = 1 + 2 * (from b)
+from-ne (b I) p = suc (2 * (from b))
 
 
 -----------------
@@ -433,7 +439,7 @@ infix 4 _≡ᴮ_
 
 data _≡ᴮ_ : Bin -> Bin -> Set where
   e≡ᴮe : ⟨⟩ ≡ᴮ ⟨⟩
---   e≡ᴮO : ⟨⟩ ≡ᴮ ⟨⟩ O
+  e≡ᴮO : ⟨⟩ ≡ᴮ ⟨⟩ O
   bO≡ᴮbO : {m n : Bin} → m ≡ᴮ n → m O ≡ᴮ n O
   bI≡ᴮbI : {m n : Bin} → m ≡ᴮ n → m I ≡ᴮ n I
 
@@ -449,12 +455,33 @@ data _≤ᴮ_ : Bin -> Bin -> Set where
 ≡ᴺ-refl {zero} = z≡ᴺz
 ≡ᴺ-refl {suc n} = s≡ᴺs ≡ᴺ-refl
 
+≡ᴺ-trans : {a b c : ℕ} → a ≡ᴺ b → b ≡ᴺ c → a ≡ᴺ c
+≡ᴺ-trans z≡ᴺz z≡ᴺz = z≡ᴺz
+≡ᴺ-trans (s≡ᴺs p) (s≡ᴺs q) = s≡ᴺs (≡ᴺ-trans p q)
+
+≡ᴺ-comm : {a b : ℕ} → a ≡ᴺ b → b ≡ᴺ a
+≡ᴺ-comm z≡ᴺz = z≡ᴺz
+≡ᴺ-comm (s≡ᴺs p) = s≡ᴺs (≡ᴺ-comm p)
+
+≡ᴺ-lift : {f : ℕ → ℕ} → {m n : ℕ} → m ≡ᴺ n → f m ≡ᴺ f n
+≡ᴺ-lift z≡ᴺz = ≡ᴺ-refl
+≡ᴺ-lift (s≡ᴺs p) = ≡ᴺ-lift p
+
 bincr-suc-lemma : {b : Bin} → from (b-incr b) ≡ᴺ suc (from b)
-bincr-suc-lemma {⟨⟩} = s≡ᴺs z≡ᴺz
-bincr-suc-lemma {b O} = s≡ᴺs {!   !}
-bincr-suc-lemma {b I} = {!   !}
+bincr-suc-lemma {⟨⟩} = ≡ᴺ-refl
+bincr-suc-lemma {b O} = ≡ᴺ-refl
+bincr-suc-lemma {b I} = ≡ᴺ-lift {double} (bincr-suc-lemma {b})
+
+bincr-suc-lemma' : {b : Bin} → from (b-incr (b-incr b)) ≡ᴺ suc (suc (from b))
+bincr-suc-lemma' {⟨⟩} = s≡ᴺs (s≡ᴺs z≡ᴺz)
+bincr-suc-lemma' {b O} = ≡ᴺ-trans (bincr-suc-lemma {b-incr (b O)}) (s≡ᴺs ≡ᴺ-refl)
+bincr-suc-lemma' {b I} = s≡ᴺs (≡ᴺ-trans (≡ᴺ-lift {double} (bincr-suc-lemma {b})) (s≡ᴺs ≡ᴺ-refl))
+
+even-transport : {m n : ℕ} → m ≡ᴺ n → Even m → Even n
+even-transport z≡ᴺz even-z = even-z
+even-transport (s≡ᴺs (s≡ᴺs p)) (even-ss q) = even-ss (even-transport p q)
 
 from-even : {b : Bin} → Even₂ b → Even (from b)
 from-even b-even-e = even-z
 from-even b-even-z = even-z
-from-even (b-even-ss {b} p) = {! even-ss (from-even p) !} 
+from-even (b-even-ss {b} p) = even-transport (≡ᴺ-comm (bincr-suc-lemma' {b})) (even-ss (from-even p))
