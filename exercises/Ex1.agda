@@ -237,8 +237,7 @@ data Even : ℕ → Set where
 data Even₂ : Bin → Set where
   {- EXERCISE: add the constructors for this inductive predicate here -}
   b-even-e : Even₂ ⟨⟩
-  b-even-z : Even₂ (⟨⟩ O)
-  b-even-ss : {b : Bin} → Even₂ b → Even₂ (b-incr (b-incr b))
+  b-even-o : {b : Bin} → Even₂ (b O)
 
 
 ----------------
@@ -250,9 +249,14 @@ data Even₂ : Bin → Set where
    if needed, do not be afraid to define auxiliary functions/proofs.
 -}
 
+even2+2 : {b : Bin} → Even₂ b → Even₂ (b-incr (b-incr b))
+even2+2 {⟨⟩} p = b-even-o
+even2+2 {b O} p = b-even-o
+
 to-even : {n : ℕ} → Even n → Even₂ (to n)
-to-even even-z = b-even-e
-to-even (even-ss p) = b-even-ss (to-even p)
+to-even {zero} p = b-even-e
+to-even {suc (suc n)} (even-ss p) = even2+2 (to-even p)
+-- to-even (even-ss p) = b-even-b (to-even p)
 -- to-even even-z = b-even-e
 -- to-even (even-ss p) = b-even-ss (to-even p)
 
@@ -304,8 +308,8 @@ data ⊥ : Set where
 -}
 
 from-ne : (b : Bin) → NonEmptyBin b → ℕ
-from-ne (b O) p = 2 * (from b)
-from-ne (b I) p = suc (2 * (from b))
+from-ne (b O) p = double (from b)
+from-ne (b I) p = suc (double (from b))
 
 
 -----------------
@@ -481,7 +485,15 @@ even-transport : {m n : ℕ} → m ≡ᴺ n → Even m → Even n
 even-transport z≡ᴺz even-z = even-z
 even-transport (s≡ᴺs (s≡ᴺs p)) (even-ss q) = even-ss (even-transport p q)
 
+-- from-even : {b : Bin} → Even₂ b → Even (from b)
+-- from-even b-even-e = even-z
+-- from-even b-even-z = even-z
+-- from-even (b-even-ss {b} p) = even-transport (≡ᴺ-comm (bincr-suc-lemma' {b})) (even-ss (from-even p))
+
+double-even : {n : ℕ} → (Even (double n))
+double-even {zero} = even-z
+double-even {suc n} = even-ss double-even
+
 from-even : {b : Bin} → Even₂ b → Even (from b)
 from-even b-even-e = even-z
-from-even b-even-z = even-z
-from-even (b-even-ss {b} p) = even-transport (≡ᴺ-comm (bincr-suc-lemma' {b})) (even-ss (from-even p))
+from-even b-even-o = double-even
