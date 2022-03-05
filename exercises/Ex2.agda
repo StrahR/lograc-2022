@@ -101,13 +101,15 @@ postulate
 -}
 
 +-identityʳ : (n : ℕ) → n + zero ≡ n
-+-identityʳ n = {!!}
++-identityʳ zero = refl
++-identityʳ (suc n) = cong suc (+-identityʳ n)
 
 +-identityˡ : (n : ℕ) → zero + n ≡ n
-+-identityˡ n = {!!}
++-identityˡ n = refl
 
 +-suc : (n m : ℕ) → n + (suc m) ≡ suc (n + m)
-+-suc n m = {!!}
++-suc zero m = refl
++-suc (suc n) m = cong suc (+-suc n m)
 
 
 ----------------
@@ -141,7 +143,9 @@ data Maybe (A : Set) : Set where
   nothing : Maybe A
 
 lookup : {A : Set} {n : ℕ} → Vec A n → ℕ → Maybe A
-lookup xs i = {!!}
+lookup [] i = nothing
+lookup (x ∷ xs) zero = just x
+lookup (x ∷ xs) (suc i) = lookup xs i
 
 
 ----------------
@@ -179,7 +183,8 @@ lookup-totalᵀ : {n : ℕ}
               → i < n                           -- `i` in `{0,1,...,n-1}`
               → lookup xs i ≡ just ⋆
              
-lookup-totalᵀ xs i p = {!!}
+lookup-totalᵀ (⋆ ∷ xs) zero (s≤s p) = cong just refl
+lookup-totalᵀ (⋆ ∷ xs) (suc i) (s≤s p) = lookup-totalᵀ xs i p
 
 {-
    Note: In the standard library, `⊤` is defined as a record type. Here
@@ -218,7 +223,8 @@ data Fin : ℕ → Set where
   suc  : {n : ℕ} (i : Fin n) → Fin (suc n)
 
 safe-lookup : {A : Set} {n : ℕ} → Vec A n → Fin n → A
-safe-lookup xs i = {!!}
+safe-lookup (x ∷ xs) zero = x
+safe-lookup (x ∷ xs) (suc i) = safe-lookup xs i
 
 
 ----------------
@@ -238,8 +244,9 @@ safe-lookup xs i = {!!}
    the correct type, the yellow highlighting below will disappear.
 -}
 
-nat-to-fin : {!!}
-nat-to-fin = {!!}
+nat-to-fin : {n : ℕ} → (k : ℕ) → k < n → Fin n
+nat-to-fin zero (s≤s p) = zero
+nat-to-fin (suc k) (s≤s p) = suc (nat-to-fin k p)
 
 lookup-correct : {A : Set} {n : ℕ}
                → (xs : Vec A n)
@@ -247,7 +254,8 @@ lookup-correct : {A : Set} {n : ℕ}
                → (p : i < n)
                → lookup xs i ≡ just (safe-lookup xs (nat-to-fin i p))
 
-lookup-correct x i p = {!!}
+lookup-correct (x ∷ xs) zero (s≤s p) = refl
+lookup-correct (x ∷ xs) (suc i) (s≤s p) = lookup-correct xs i p
 
 
 ----------------
@@ -260,7 +268,8 @@ lookup-correct x i p = {!!}
 -}
 
 take-n : {A : Set} {n m : ℕ} → Vec A (n + m) → Vec A n
-take-n xs = {!!}
+take-n {n = zero} {m} xs = []
+take-n {n = suc n} {m} (x ∷ xs) = x ∷ take-n xs
 
 
 ----------------
@@ -273,8 +282,19 @@ take-n xs = {!!}
    by recursion. Use `take-n` and equational reasoning instead.
 -}
 
++-com : (x y : ℕ) → x + y ≡ y + x
++-com x zero = +-identityʳ x
++-com x (suc y) = 
+   begin 
+      x + suc y
+   ≡⟨ +-suc x y ⟩
+      suc (x + y)
+   ≡⟨ cong suc (+-com x y) ⟩
+      suc (y + x)
+   ∎
+
 take-n' : {A : Set} {n m : ℕ} → Vec A (m + n) → Vec A n
-take-n' xs = {!!}
+take-n' {A} {n} {m} xs rewrite cong (Vec A) (+-com m n) = take-n xs
 
 
 ----------------
@@ -287,7 +307,8 @@ take-n' xs = {!!}
 -}
 
 vec-list : {A : Set} {n : ℕ} → Vec A n → List A
-vec-list xs = {!!}
+vec-list [] = []
+vec-list (x ∷ xs) = x ∷ vec-list xs
 
 {-
    Define a function from lists to vectors that is identity on the
@@ -297,8 +318,9 @@ vec-list xs = {!!}
    natural number specifying the length of the returned vector.
 -}
 
-list-vec : {A : Set} → (xs : List A) → Vec A {!!}
-list-vec xs = {!!}
+list-vec : {A : Set} → (xs : List A) → Vec A (length xs)
+list-vec [] = []
+list-vec (x ∷ xs) = x ∷ list-vec xs
 
 
 ----------------
@@ -314,7 +336,8 @@ vec-list-length : {A : Set} {n : ℕ}
                 → (xs : Vec A n)
                 → n ≡ length (vec-list xs)
                 
-vec-list-length xs = {!!}
+vec-list-length [] = refl
+vec-list-length (x ∷ xs) = cong suc (vec-list-length xs)
 
 
 ----------------
@@ -343,8 +366,16 @@ Matrix A m n = Vec (Vec A n) m
    of two vectors of the same length.
 -}
 
+-- infixl 6 _+ⱽ_
+-- infixl 6 _+ᴹ_
+
+_+ⱽ_ : {n : ℕ} → Vec ℕ n → Vec ℕ n → Vec ℕ n
+[] +ⱽ [] = []
+(x ∷ xs) +ⱽ (y ∷ ys) = (x + y) ∷ (xs +ⱽ ys)
+
 _+ᴹ_ : {m n : ℕ} → Matrix ℕ m n → Matrix ℕ m n → Matrix ℕ m n
-xss +ᴹ yss = {!!}
+[] +ᴹ [] = []
+(xs ∷ xss) +ᴹ (ys ∷ yss) = (xs +ⱽ ys) ∷ (xss +ᴹ yss)
 
 
 -----------------------------
@@ -372,7 +403,12 @@ xss +ᴹ yss = {!!}
 list-vec-list : {A : Set}
               → vec-list ∘ list-vec ≡ id {A = List A}
               
-list-vec-list = {!!}
+list-vec-list = fun-ext list-vec-list-ext
+   where
+      list-vec-list-ext : {A : Set}
+                        → (x : List A) → vec-list (list-vec x) ≡ x
+      list-vec-list-ext [] = refl
+      list-vec-list-ext (x ∷ xs) = cong (λ xs → x ∷ xs) (list-vec-list-ext xs)
 
 
 -----------------
@@ -389,8 +425,18 @@ list-vec-list = {!!}
    in terms of the transpose of the submatrix without the first row.
 -}
 
+repeat : {A : Set} (n : ℕ) → (x : A) → Vec A n
+repeat zero x = []
+repeat (suc n) x = x ∷ repeat n x
+
 transpose : {A : Set} {m n : ℕ} → Matrix A m n → Matrix A n m
-transpose xss = {!!}
+transpose {n = n} [] = repeat n []
+transpose {m = suc m} {n = n} (xs ∷ xss) = stack xs (transpose xss)
+   where
+      stack : {A : Set} {m n : ℕ} 
+            → (xs : Vec A n) → (yss : Matrix A n m) → Matrix A n (suc m)
+      stack [] [] = []
+      stack (x ∷ xs) (ys ∷ yss) = (x ∷ ys) ∷ (stack xs yss)
 
 
 -----------------
@@ -428,8 +474,19 @@ data _</≡/>_ (n m : ℕ) : Set where
    PLFA (https://plfa.inf.ed.ac.uk/Decidable/) for more details.
 -}
 
+-- cong-suc-</≡/> : {n m : ℕ} → n </≡/> m → suc n </≡/> suc m
+-- cong-suc-</≡/> (n<m x) = n<m (s≤s x)
+-- cong-suc-</≡/> (n≡m x) = n≡m (cong suc x)
+-- cong-suc-</≡/> (n>m x) = n>m (s≤s x)
+
 test-</≡/> : (n m : ℕ) → n </≡/> m
-test-</≡/> n m = {!!}
+test-</≡/> zero zero = n≡m refl
+test-</≡/> zero (suc m) = n<m (s≤s z≤n)
+test-</≡/> (suc n) zero = n>m (s≤s z≤n)
+test-</≡/> (suc n) (suc m) with test-</≡/> n m
+...                           | n<m x = n<m (s≤s x)
+...                           | n≡m x = n≡m (cong suc x)
+...                           | n>m x = n>m (s≤s x)
 
 
 -----------------
@@ -483,7 +540,11 @@ data Tree (A : Set) : Set where
 -}
 
 insert : Tree ℕ → ℕ → Tree ℕ
-insert t n = {!!}
+insert empty n = node empty n empty
+insert (node t m u) n with test-</≡/> n m
+...                      | n≡m p = node t m u
+...                      | n<m p = node (insert t n) m u
+...                      | n>m p = node t m (insert u n)
 
 {-
    As a sanity check, prove that inserting 12, 27, and 52 into the above
@@ -493,17 +554,17 @@ insert t n = {!!}
 insert-12 : insert (node (node empty 22 (node empty 32 empty)) 42 (node empty 52 empty)) 12
             ≡
             node (node (node empty 12 empty) 22 (node empty 32 empty)) 42 (node empty 52 empty)
-insert-12 = {!!}
+insert-12 = refl
 
 insert-27 : insert (node (node empty 22 (node empty 32 empty)) 42 (node empty 52 empty)) 27
             ≡
             node (node empty 22 (node (node empty 27 empty) 32 empty)) 42 (node empty 52 empty)
-insert-27 = {!!}            
+insert-27 = refl
 
 insert-52 : insert (node (node empty 22 (node empty 32 empty)) 42 (node empty 52 empty)) 52
             ≡
             node (node empty 22 (node empty 32 empty)) 42 (node empty 52 empty)
-insert-52 = {!!}
+insert-52 = refl
 
 
 -----------------
@@ -520,7 +581,9 @@ insert-52 = {!!}
 
 data _∈_ (n : ℕ) : Tree ℕ → Set where
   {- EXERCISE: the constructors for the `∈` relation go here -}
-
+  ∈-here : {t u : Tree ℕ} → n ∈ node t n u
+  ∈-thereᴸ : {m : ℕ} {t u : Tree ℕ} → n ∈ t → n ∈ node t m u
+  ∈-thereᴿ : {m : ℕ} {t u : Tree ℕ} → n ∈ u → n ∈ node t m u
 
 {-
    Prove that the tree returned by the `insert` function indeed
@@ -539,7 +602,12 @@ data _∈_ (n : ℕ) : Tree ℕ → Set where
 -}
 
 insert-∈ : (t : Tree ℕ) → (n : ℕ) → n ∈ (insert t n)
-insert-∈ t n = {!!}
+insert-∈ empty n = ∈-here
+insert-∈ (node t m u) n with test-</≡/> n m
+...                        | n≡m refl = ∈-here
+...                        | n<m p    = ∈-thereᴸ (insert-∈ t n)
+...                        | n>m p    = ∈-thereᴿ (insert-∈ u n)
+
 
 
 -----------------------------------
@@ -628,11 +696,29 @@ data IsBST : Tree ℕ → Set where
    Hint: You might find it helpful to prove the transitivity of `<∞`.
 -}
 
+≤-trans : {a b c : ℕ} → a ≤ b → b ≤ c → a ≤ c
+≤-trans z≤n z≤n = z≤n
+≤-trans z≤n (s≤s q) = z≤n
+≤-trans (s≤s p) (s≤s q) = s≤s (≤-trans p q)
+
+≤-suc : {n : ℕ} → n ≤ suc n
+≤-suc {zero} = z≤n
+≤-suc {suc n} = s≤s ≤-suc
+
+<-trans : {a b c : ℕ} → a < b → b < c → a < c
+<-trans (s≤s p) (s≤s q) = s≤s (≤-trans p (≤-trans ≤-suc q))
+
+<∞-trans : {a b c : ℕ∞} → a <∞ b → b <∞ c → a <∞ c
+<∞-trans -∞<n _    = -∞<n
+<∞-trans p    n<+∞ = n<+∞
+<∞-trans ([]<[] p) ([]<[] q) = []<[] (<-trans p q)
+
 isbst-rec-<∞ : {lower upper : ℕ∞} {t : Tree ℕ}
              → IsBST-rec lower upper t
              → lower <∞ upper
              
-isbst-rec-<∞ p = {!!}
+isbst-rec-<∞ (empty-bst p) = p
+isbst-rec-<∞ (node-bst p q) = <∞-trans (isbst-rec-<∞ p) (isbst-rec-<∞ q)
 
 {-
    Disclaimer: The `(p : lower <∞ upper)` proof witness in the `empty`
@@ -680,8 +766,28 @@ bst = node-bst
    preserving also the recursively defined `IsBST-rec` relation.
 -}
 
+-- IsBST-to-rec : (t : Tree ℕ) {m : ℕ} 
+--              → IsBST t → IsBST-rec -∞ [ m ] t
+-- IsBST-to-rec empty {m} empty-bst = empty-bst -∞<n
+-- IsBST-to-rec (node t x u) {m} (node-bst p q) = node-bst p {!  q !}
+
+lemma1 : (t u : Tree ℕ) {m : ℕ} → IsBST t
+       → IsBST-rec -∞ [ m ] t
+lemma1 t u p = {!   !}
+
+insert-left : (t u : Tree ℕ) {m : ℕ} (n : ℕ) → n < m  → IsBST (node t m u)
+            → insert (node t m u) n ≡ node (insert t n) m u
+insert-left t u n p-left p-bst = {!   !}
+
+
 insert-bst : (t : Tree ℕ) → (n : ℕ) → IsBST t → IsBST (insert t n)
-insert-bst t n p = {!!}
+insert-bst empty n empty-bst = node-bst (empty-bst -∞<n) (empty-bst n<+∞)
+insert-bst (node t m u) n (node-bst p q)
+   with test-</≡/> n m
+...   | n≡m x = node-bst p q
+...   | n<m x = node-bst (lemma1 (insert t n) u 
+                           (subst IsBST (insert-left t u n x (node-bst p q)) (insert-bst (node t m u) n (node-bst p q)))) q
+...   | n>m x = node-bst p {!   !}
 
 
 -----------------
@@ -713,9 +819,9 @@ insert-bst t n p = {!!}
 -}
 
 vec-list-vec : {A : Set} {n : ℕ}
-             → list-vec ∘ vec-list ≡ {!!}
+             → list-vec ∘ vec-list ≡ {!   !}
                
-vec-list-vec = {!!}
+vec-list-vec = {!   !}
 
 
 -----------------------------------
@@ -724,3 +830,4 @@ vec-list-vec = {!!}
 -----------------------------------
 -----------------------------------
 
+    
