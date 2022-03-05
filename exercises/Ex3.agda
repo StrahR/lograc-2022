@@ -524,8 +524,56 @@ from-bin' b = from-bin'-aux b 0
 
 open import Data.Nat.Properties
 
+n*2≡n+n : {n : ℕ} → n * 2 ≡ n + n
+n*2≡n+n {zero} = refl
+n*2≡n+n {suc n} = cong suc
+   (begin
+      suc (n * 2)
+   ≡⟨ cong suc (n*2≡n+n {n}) ⟩
+      suc (n + n)
+   ≡⟨ sym (+-suc n n) ⟩
+      n + suc n
+   ∎)
+
+neki : {n : ℕ} → 2 ^ n * 2 ≡ 2 ^ (suc n)
+neki {n} =
+   begin
+      (2 ^ n) * 2
+   ≡⟨ n*2≡n+n {2 ^ n} ⟩
+      (2 ^ n) + (2 ^ n)
+   ≡⟨ cong ((2 ^ n) +_) (sym (+-identityʳ (2 ^ n))) ⟩
+      (2 ^ n) + ((2 ^ n) + zero)
+   ∎
+
 from-bin-≡ : (b : Bin) → from-bin b ≡ from-bin' b
-from-bin-≡ b = from-bin-≡-aux
+from-bin-≡ b = trans (sym (+-identityʳ (from-bin b))) (from-bin-≡-aux b)
    where
-   from-bin-≡-aux : {n : ℕ} → from-bin b ≡ from-bin'-aux b n
-   from-bin-≡-aux = {!   !}
+   from-bin-≡-aux : {n : ℕ} (b : Bin)
+                  → (2 ^ n) * from-bin b ≡ from-bin'-aux b n
+   from-bin-≡-aux {n} ⟨⟩    = *-zeroʳ (2 ^ n)
+   from-bin-≡-aux {n} (b O) =
+      begin
+         (2 ^ n) * (from-bin b + (from-bin b + zero))
+      ≡⟨ cong (λ x → (2 ^ n) * x) refl ⟩
+         (2 ^ n) * (2 * from-bin b)
+      ≡⟨ sym (*-assoc (2 ^ n) _ _) ⟩
+         ((2 ^ n) * 2) * from-bin b
+      ≡⟨ cong (λ x → x * from-bin b) (neki {n}) ⟩
+         (2 ^ (suc n)) * from-bin b
+      ≡⟨ from-bin-≡-aux {suc n} b ⟩
+         from-bin'-aux b (suc n)
+      ∎
+   from-bin-≡-aux {n} (b I) =
+      begin
+         (2 ^ n) * suc (from-bin b + (from-bin b + zero))
+      ≡⟨ cong (λ x → (2 ^ n) * suc x) refl ⟩
+         (2 ^ n) * suc (2 * from-bin b)
+      ≡⟨ *-suc (2 ^ n) (2 * from-bin b) ⟩
+         (2 ^ n) + (2 ^ n) * (2 * from-bin b)
+      ≡⟨ cong ((2 ^ n) +_) (sym (*-assoc (2 ^ n) _ _)) ⟩
+         (2 ^ n) + ((2 ^ n) * 2) * from-bin b
+      ≡⟨ cong ((λ x →  (2 ^ n) + x * from-bin b)) (neki {n}) ⟩
+         (2 ^ n) + (2 ^ (suc n)) * from-bin b
+      ≡⟨ cong ((2 ^ n) +_) (from-bin-≡-aux {suc n} b) ⟩
+         (2 ^ n) + from-bin'-aux b (suc n)
+      ∎
